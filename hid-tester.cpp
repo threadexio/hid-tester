@@ -1,28 +1,21 @@
 #include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
-
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
 
 #define BIT(x)	1 << x
 #define SIZE(x) (sizeof(x) / sizeof(x[0]))
 
 #ifndef NDEBUG
-#define LOGV(x)                                                                \
-	std::cout << __PRETTY_FUNCTION__ << ":" << __LINE__ << " | " << #x         \
-			  << " = " << x << "\n";
+#define LOGV(x, fmt)                                                           \
+	printf("%s:%d | %s = " fmt "\n", __PRETTY_FUNCTION__, __LINE__, #x, x);
 #else
-#define LOGV(x)
+#define LOGV(x, fmt)
 #endif
 
+#define INPUT_BUF_LEN 1024
 #define REPORT_LENGTH 8
-
-// HID Class definition - 5.6 Reports
-// Using USB terminology, a device may send or receive a transaction
-// every USB frame (1 millisecond).
-#define USB_FRAME_DELAY 1000
 
 using byte = unsigned char;
 
@@ -209,7 +202,8 @@ namespace keyboard {
 	static int write_to_keyboard(const char* kdev, char report[REPORT_LENGTH]) {
 		int kfd = open(kdev, O_WRONLY);
 		if (kfd < 0) {
-			LOGV(kfd)
+			perror("open");
+			LOGV(kfd, "%d")
 			return kfd;
 		}
 		int ret = write(kfd, report, REPORT_LENGTH);
@@ -217,8 +211,6 @@ namespace keyboard {
 		char empty[REPORT_LENGTH] = {0};
 		write(kfd, empty, REPORT_LENGTH);
 		close(kfd);
-
-		usleep(USB_FRAME_DELAY);
 
 		return ret;
 	}
@@ -252,8 +244,8 @@ namespace keyboard {
 								continue;
 							}
 						}
-						LOGV(keycodes[i].key)
-						LOGV((int)keycodes[i].code)
+						LOGV(keycodes[i].key, "%s")
+						LOGV(keycodes[i].code, "%d")
 						report[2 + kp_index++] = keycodes[i].code;
 					}
 			} else { // we have reached the end of the report but there are more
@@ -280,14 +272,14 @@ int main(int argc, char* argv[]) {
 	char* input;
 
 	if (argc < 2) {
-		std::cout << "Usage: " << argv[0] << " [hidgX] {data}\n";
+		printf("Usage: %s [hidgX] {data}\n", argv[0]);
 		return 0;
 	}
 
 	// read from stdin, unless argv[2] was passed
 	if (argc < 3) {
-		input = (char*)calloc(512, sizeof(char));
-		read(STDIN_FILENO, input, 512);
+		input = (char*)calloc(INPUT_BUF_LEN, sizeof(char));
+		read(STDIN_FILENO, input, INPUT_BUF_LEN);
 	} else {
 		input = argv[2];
 	}

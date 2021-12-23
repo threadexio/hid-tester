@@ -1,4 +1,5 @@
-CFLAGS := -Wall -O2 -static -s -static-libgcc -static-libstdc++ -fPIE
+FLAGS ?=
+CFLAGS := -Wall -O2 -static -s -static-libgcc -static-libstdc++ -fPIE $(FLAGS)
 
 SRC := hid-tester.cpp
 TARGET := hid-tester
